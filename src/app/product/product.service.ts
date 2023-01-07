@@ -1,9 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, IsNull, Not, Repository } from 'typeorm';
+import { Between, DeleteResult, IsNull, Like, Not, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
+
+type Options = {
+  deleteAt: any,
+  price: any,
+  name?: any
+}
 
 @Injectable()
 export class ProductService {
@@ -29,6 +35,24 @@ export class ProductService {
         where: { 
           deleteAt: IsNull()
         }
+    });
+      return products;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async sort({name, minPrice, maxPrice}): Promise<Product[]> {
+    try {
+      const options: Options = {
+        deleteAt: IsNull(),
+        price: Between(minPrice, maxPrice)
+      };
+
+      if(name) options.name = Like(name)
+
+      const products = await this.productRepository.find({
+        where: options
     });
       return products;
     } catch (error) {

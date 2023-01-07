@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, StreamableFile } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { createWriteStream, mkdirSync } from 'fs';
+import { createReadStream, createWriteStream, mkdirSync, ReadStream, statSync } from 'fs';
 import { createHash } from 'crypto';
 import { join } from 'path';
+import { SortProducts } from './dto/sort-products.dto';
 
 @Controller('product')
 export class ProductController {
@@ -13,6 +14,14 @@ export class ProductController {
   @Post()
   async create(@Body() createProductDto: CreateProductDto): Promise<string> {
     const result = await this.productService.create(createProductDto);
+    return JSON.stringify(result);
+  }
+
+  @Post('sort/')
+  async sort(@Body() sortProducts: SortProducts): Promise<string> {
+    console.log(sortProducts);
+    
+    const result = await this.productService.sort(sortProducts);
     return JSON.stringify(result);
   }
 
@@ -36,7 +45,7 @@ export class ProductController {
     return this.productService.update(+id, updateProductDto);
   }
 
-  @Delete(':id')
+  @Get('delete/:id')
   remove(@Param('id') id: string) {
     return this.productService.remove(+id);
   }
@@ -76,5 +85,16 @@ export class ProductController {
     writableStream.on('error', (err) => {
       return "Error: " + err
     });
+  }
+
+  @Get('getImage/:id')
+  async getStaticFile(@Param('id') id: string): Promise<any> {
+    const fileName: string = await this.productService.findOne(+id).then( user => user.img_url)
+    if(!fileName) return;
+    const path: string = join(__dirname, `../../store/products/${id}/${fileName}`);
+    const size: number = statSync(path).size;
+    let ext: string = path.split('.')[1];
+    const file: ReadStream = createReadStream(path);
+    return new StreamableFile(file, {type: `image/${ext}`, disposition: `attachment; filename="${fileName}"`, length: size});
   }
 }
