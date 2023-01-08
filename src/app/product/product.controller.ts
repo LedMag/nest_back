@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, StreamableFile, UseGuards } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -6,7 +6,10 @@ import { createReadStream, createWriteStream, mkdirSync, ReadStream, statSync } 
 import { createHash } from 'crypto';
 import { join } from 'path';
 import { SortProducts } from './dto/sort-products.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../auth/decorators/public.decorator';
 
+@UseGuards(JwtAuthGuard)
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
@@ -17,6 +20,7 @@ export class ProductController {
     return JSON.stringify(result);
   }
 
+  @Public()
   @Post('sort/')
   async sort(@Body() sortProducts: SortProducts): Promise<string> {
     console.log(sortProducts);
@@ -25,6 +29,7 @@ export class ProductController {
     return JSON.stringify(result);
   }
 
+  @Public()
   @Get()
   findAll() {
     return this.productService.findAll();
@@ -35,6 +40,7 @@ export class ProductController {
     return this.productService.findAllDeleted()
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productService.findOne(+id);
@@ -87,6 +93,7 @@ export class ProductController {
     });
   }
 
+  @Public()
   @Get('getImage/:id')
   async getStaticFile(@Param('id') id: string): Promise<any> {
     const fileName: string = await this.productService.findOne(+id).then( user => user.img_url)
