@@ -36,10 +36,4 @@ COPY . .
 
 COPY --from=dev /usr/src/app/dist/ ./dist/
 
-# RUN chmod +x wait_db.sh
-
-# RUN ./wait_db.sh
-
-# RUN npm run migration:run
-
 CMD ["node", "dist/main"]

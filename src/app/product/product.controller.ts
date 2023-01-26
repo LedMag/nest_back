@@ -67,7 +67,6 @@ export class ProductController {
     const fullName = `${fileName.replace(reg, '')}.${ext}`;
     const path: string = `${pathFold}${fullName}`;
     let writableStream = createWriteStream(path);
-    console.log(fullName);
     
     req.on('data', data => {
       writableStream.write(data);
@@ -76,6 +75,8 @@ export class ProductController {
       self.productService.findOne(+id)
       .then(product => {
         if(!product.img_url) {
+          console.log(fullName);
+    
           self.productService.update(+id, {img_url: fullName});
         }
       })
