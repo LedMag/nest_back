@@ -13,7 +13,7 @@ async function bootstrap() {
     rawBody: true
   });
 
-  // app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api');
 
   await app.listen(process.env.PORT);
 }

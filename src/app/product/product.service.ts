@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, StreamableFile } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DeleteResult, IsNull, Like, Not, Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
+import { join } from 'path';
+import { ReadStream, createReadStream, readFileSync, readdir, readdirSync, rmdirSync, statSync } from 'fs';
+import { rmdir } from 'fs/promises';
+import { IProduct } from './interface/product.interface';
 
 type Options = {
   deleteAt: any,
@@ -73,9 +77,17 @@ export class ProductService {
     }
   }
 
-  async findOne(id: number): Promise<Product> {
+  async findOne(id: number): Promise<IProduct> {
     try {
-      const product = await this.productRepository.findOneBy({id});
+      const product: IProduct = await this.productRepository.findOneBy({id});
+      const path: string = join(__dirname, `../../store/products/${id}/`);
+      const paths: string[] = readdirSync(path).filter( data => {
+        const isFile = statSync(path + data).isFile();
+        if(isFile) {
+          return data;
+        }
+      })
+      product.imgs = paths;
       return product;
     } catch (error) {
       console.log(error);
@@ -94,11 +106,27 @@ export class ProductService {
       }
     } catch (error) {
       console.log(error);
-      
     }
   }
 
   async remove(id: number): Promise<string> {
+    try {
+      const pathFold = join(__dirname, `../../store/products/${id}/`);
+
+      rmdirSync(pathFold, {recursive: true});
+
+      const result: any = await this.productRepository.delete({id});
+
+      if(result) {
+        console.log({result});
+        return JSON.stringify({msg: `Product was deleted from trash`})
+      }
+    } catch (error) {
+      console.log('Error', error);
+    }
+  }
+
+  async softRemove(id: number): Promise<string> {
     try {
       const updateProductDto: Product = await this.productRepository.findOneBy({id});
 
@@ -112,7 +140,7 @@ export class ProductService {
         return JSON.stringify({msg: `Product was deleted`})
       }
     } catch (error) {
-      console.log(error);
+      console.log('Error', error);
     }
   }
 }

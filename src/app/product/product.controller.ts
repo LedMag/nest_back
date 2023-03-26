@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, StreamableFile, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query, StreamableFile, UseGuards, Res } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { createReadStream, createWriteStream, mkdirSync, ReadStream, statSync } from 'fs';
+import { createReadStream, createWriteStream, mkdirSync, readdir, ReadStream, statSync } from 'fs';
 import { createHash } from 'crypto';
-import { join } from 'path';
+import { extname, join } from 'path';
 import { SortProducts } from './dto/sort-products.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../auth/decorators/public.decorator';
@@ -50,8 +50,13 @@ export class ProductController {
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productService.update(+id, updateProductDto);
   }
+  
+  @Delete('delete/:id')
+  softRemove(@Param('id') id: string) {
+    return this.productService.softRemove(+id);
+  }
 
-  @Get('delete/:id')
+  @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productService.remove(+id);
   }
@@ -95,14 +100,13 @@ export class ProductController {
   }
 
   @Public()
-  @Get('getImage/:id')
-  async getStaticFile(@Param('id') id: string): Promise<any> {
-    const fileName: string = await this.productService.findOne(+id).then( user => user.img_url)
-    if(!fileName) return;
-    const path: string = join(__dirname, `../../store/products/${id}/${fileName}`);
+  @Get('getImage/:id/:url')
+  async getStaticFileByName(@Param('id') id: string, @Param('url') url: string): Promise<any> {
+    if(!url) return;
+    const path: string = join(__dirname, `../../store/products/${id}/${url}`);
     const size: number = statSync(path).size;
     let ext: string = path.split('.')[1];
     const file: ReadStream = createReadStream(path);
-    return new StreamableFile(file, {type: `image/${ext}`, disposition: `attachment; filename="${fileName}"`, length: size});
+    return new StreamableFile(file, {type: `image/${ext}`, disposition: `attachment; filename="${url}"`, length: size});
   }
 }
