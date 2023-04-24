@@ -8,6 +8,9 @@ import { extname, join } from 'path';
 import { SortProducts } from './dto/sort-products.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../auth/decorators/public.decorator';
+import { PageOptionsDto } from './dto/page-options.dto';
+import { Product } from './entities/product.entity';
+import { PageDto } from './dto/page.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('product')
@@ -31,8 +34,8 @@ export class ProductController {
 
   @Public()
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  async findAll(@Query() pageOptionsDto: PageOptionsDto): Promise<PageDto<Product>> {    
+    return await this.productService.findAll(pageOptionsDto);
   }
 
   @Get('recycle')

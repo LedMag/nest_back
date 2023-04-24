@@ -6,6 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from './database/config/db.config';
 import { AuthModule } from './app/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { CategoryModule } from './category/category.module';
+import { CategoryModule } from './app/category/category.module';
+import { CollectionModule } from './app/collection/collection.module';
 
 @Module({
   imports: [
@@ -18,7 +21,9 @@ import { ConfigModule } from '@nestjs/config';
       ...dataSourceOptions,
       autoLoadEntities: true
     }),
-    AuthModule
+    AuthModule,
+    CategoryModule,
+    CollectionModule
   ],
   controllers: [AppController],
   providers: [AppService],

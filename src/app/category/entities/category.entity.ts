@@ -1,18 +1,12 @@
-import { Category } from 'src/app/category/entities/category.entity';
-import { Collection } from 'src/app/collection/entities/collection.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity('products')
-export class Product {
-
+@Entity('categories')
+export class Category {
     @PrimaryGeneratedColumn()
     id: number;
     
     @Column({unique: true, length: 32})
     name: string;
-
-    @Column('int')
-    price: number;
 
     @Column('text', {nullable: true})
     img_url: string;
@@ -34,10 +28,5 @@ export class Product {
 
     @Column('text', {nullable: true})
     description_ru: string;
-
-    @ManyToOne(type => Category, category => category.id)
-    category: Category;
-
-    @ManyToOne(type => Collection, collection => collection.id)
-    collection: Collection;
 }
+

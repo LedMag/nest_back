@@ -3,9 +3,9 @@ export interface IProduct {
     price: number;
     img_url?: string;
     imgs?: string[];
-    deleteAt?: Date;
-    updateAt?: Date;
-    createAt: Date;
+    deletedAt?: Date;
+    updatedAt?: Date;
+    createdAt: Date;
     description_en?: string;
     description_es?: string;
     description_ru?: string;

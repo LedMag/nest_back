@@ -8,9 +8,12 @@ import { join } from 'path';
 import { ReadStream, createReadStream, readFileSync, readdir, readdirSync, rmdirSync, statSync } from 'fs';
 import { rmdir } from 'fs/promises';
 import { IProduct } from './interface/product.interface';
+import { PageOptionsDto } from './dto/page-options.dto';
+import { PageMetaDto } from './dto/page-meta.dto';
+import { PageDto } from './dto/page.dto';
 
 type Options = {
-  deleteAt: any,
+  deletedAt: any,
   price: any,
   name?: any
 }
@@ -33,14 +36,23 @@ export class ProductService {
     }
   }
 
-  async findAll(): Promise<Product[]> {
+  async findAll(pageOptionsDto: PageOptionsDto): Promise<Promise<PageDto<Product>>> {
     try {
-      const products = await this.productRepository.find({
-        where: { 
-          deleteAt: IsNull()
-        }
-    });
-      return products;
+      const queryBuilder = await this.productRepository.createQueryBuilder("product");
+
+      queryBuilder
+        .where({"deletedAt": IsNull()})
+        .andWhere({"category": pageOptionsDto.category})
+        .andWhere({"collection": pageOptionsDto.collection})
+        .orderBy(pageOptionsDto.orderBy, pageOptionsDto.order)
+        .skip(pageOptionsDto.skip)
+        .take(pageOptionsDto.take)
+
+      const itemCount = await queryBuilder.getCount();
+      const { entities } = await queryBuilder.getRawAndEntities();
+
+      const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
+      return new PageDto(entities, pageMetaDto);
     } catch (error) {
       console.log(error);
     }
@@ -49,7 +61,7 @@ export class ProductService {
   async sort({name, minPrice, maxPrice}): Promise<Product[]> {
     try {
       const options: Options = {
-        deleteAt: IsNull(),
+        deletedAt: IsNull(),
         price: Between(minPrice, maxPrice)
       };
 
@@ -68,7 +80,7 @@ export class ProductService {
     try {
       const products = await this.productRepository.find({
         where: { 
-          deleteAt: Not(IsNull())
+          deletedAt: Not(IsNull())
         }
     });
       return products;
@@ -132,7 +144,7 @@ export class ProductService {
 
       const updateProduct = {
         ...updateProductDto,
-        deleteAt: (new Date()).toJSON()
+        deletedAt: (new Date()).toJSON()
       }
       const product = await this.productRepository.preload(updateProduct);
       if(product) {
