@@ -13,4 +13,10 @@ export class SortProducts {
 
     @IsString()
     maxPrice: string;
+
+    @IsString()
+    category_id
+
+    @IsString()
+    collection_id
 }

@@ -5,9 +5,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Collection } from './entities/collection.entity';
 import { IsNull, Not, Repository } from 'typeorm';
 import { join } from 'path';
-import { readdirSync, rmdirSync, statSync } from 'fs';
 import { IResponse } from '../response/response.interface';
 import { ResponseDto } from '../response/response.dto';
+import { PageOptionsDto } from '../page-interfaces/page-options.dto';
+import { PageMetaDto } from '../page-interfaces/page-meta.dto';
+import { rm, stat, unlink } from 'fs/promises';
 
 @Injectable()
 export class CollectionService {
@@ -21,52 +23,83 @@ export class CollectionService {
     try {
       const newCollection = this.collectionRepository.create(createCollectionDto);
       const savedCollection = await this.collectionRepository.save(newCollection);
-      return new ResponseDto<Collection>(savedCollection);
+      return new ResponseDto<Collection>(savedCollection, null, 201);
     } catch (error) {
       console.log(error);
-      return new ResponseDto<any>({}, 500, "", true, error.msg);
+      return new ResponseDto<any>({}, null, 500, "", true, error.sqlMessage);
     }
   }
 
-  async findAll(): Promise<IResponse<Collection[]>> {
+  async findAll(pageOptionsDto: PageOptionsDto): Promise<IResponse<Collection[]>> {
     try {
-      const collections = await this.collectionRepository.find({
-        where: { 
-          deletedAt: IsNull()
-        }
-      });
+      const collections: Collection[] = await this.collectionRepository.find({
+        where: {"deletedAt": IsNull()},
+        skip: pageOptionsDto.skip,
+        take: pageOptionsDto.take
+      })
+
+      if(collections.length) {
+        const pageMetaDto = new PageMetaDto({ itemCount: collections.length, pageOptionsDto });
+        return new ResponseDto<Collection[]>(collections, pageMetaDto, 200);
+      }
+
       return new ResponseDto<Collection[]>(collections);
     } catch(error) {
-      return new ResponseDto<any>([], 500, "", true, error.msg);
+      return new ResponseDto<any>([], null, 500, "", true, error.sqlMessage);
     }
   }
 
   async findOne(id: number): Promise<IResponse<Collection>> {
     try {
       const collection = await this.collectionRepository.findOneBy({id});
-      return new ResponseDto<Collection>(collection);
+      if(collection) return new ResponseDto<Collection>(collection, null, 204);
+      return new ResponseDto<Collection>(collection, null, 204);
     } catch (error) {
       console.log(error);
-      return new ResponseDto<any>({}, 500, "", true, error.msg);
+      return new ResponseDto<any>({}, null, 500, "", true, error.sqlMessage);
     }
   }
 
-  async findAllDeleted(): Promise<IResponse<Collection[]>> {
+  async findAllDeleted(pageOptionsDto: PageOptionsDto): Promise<IResponse<Collection[]>> {
     try {
-      const collections = await this.collectionRepository.find({
-        where: { 
-          deletedAt: Not(IsNull())
-        }
-    });
-      return new ResponseDto<Collection[]>(collections)
-    } catch (error) {
-      console.log(error);
-      return new ResponseDto<any>([], 500, "", true, error.msg);
+      const collections: Collection[] = await this.collectionRepository.find({
+        where: {"deletedAt": Not(IsNull())},
+        skip: pageOptionsDto.skip,
+        take: pageOptionsDto.take
+      })
+
+      if(collections.length) {
+        const pageMetaDto = new PageMetaDto({ itemCount: collections.length, pageOptionsDto });
+        return new ResponseDto<Collection[]>(collections, pageMetaDto, 200);
+      }
+
+      return new ResponseDto<Collection[]>(collections);
+    } catch(error) {
+      return new ResponseDto<any>([], null, 500, "", true, error.sqlMessage);
     }
   }
 
   async update(id: number, updateCollectionDto: UpdateCollectionDto): Promise<IResponse<Collection>> {
     try {
+      const oldCollection = await this.collectionRepository.findOneBy({id});
+
+      if(oldCollection.img_url !== updateCollectionDto.img_url) {
+        const pathFold = join(__dirname, `../store/categories/${id}/${oldCollection.img_url}`);
+
+        const stats = await stat(pathFold).then( async (stats) => stats).catch( error => {
+          console.log(error);
+        })
+
+        if(!stats) return;
+        await unlink(pathFold)
+        .then( () => {
+          console.log(`Image of category ${id} deleted successfully`);
+        })
+        .catch( error => {
+          console.log(error);
+        });  
+      };
+
       const updateCollection = {
         id,
         ...updateCollectionDto,
@@ -75,25 +108,25 @@ export class CollectionService {
       
       const savedCollection = await this.collectionRepository.save(collection);
 
-      return new ResponseDto<Collection>(savedCollection);
+      return new ResponseDto<Collection>(savedCollection, null, 200);
     } catch (error) {
       console.log(error);
-      return new ResponseDto<any>({}, 500, "", true, error.msg);
+      return new ResponseDto<any>({}, null, 500, "", true, error.sqlMessage);
     }
   }
 
   async remove(id: number): Promise<IResponse<string>> {
     try {
-      const pathFold = join(__dirname, `../../store/collections/${id}/`);
+      const pathFold = join(__dirname, `../store/collections/${id}/`);
 
-      rmdirSync(pathFold, {recursive: true});
+      await rm(pathFold, {recursive: true}).catch( err => null);
 
       await this.collectionRepository.delete({id});
 
-      return new ResponseDto<string>(JSON.stringify({msg: `Product was deleted from trash`}))
+      return new ResponseDto<string>(`Collection with id ${id} is deleted from trash`, null, 200);
     } catch (error) {
       console.log('Error', error);
-      return new ResponseDto<any>("", 500, "", true, error.msg);
+      return new ResponseDto<any>(`Collection with id ${id} is not deleted from trash`, null, 500, "", true, error.sqlMessage);
     }
   }
 
@@ -101,18 +134,18 @@ export class CollectionService {
     try {
       const collection: Collection = await this.collectionRepository.findOneBy({id});
 
-      const updateProduct = {
+      const updateCollection = {
         ...collection,
         deletedAt: (new Date()).toJSON()
       }
-      const product = await this.collectionRepository.preload(updateProduct);
+      const preloadCollection = await this.collectionRepository.preload(updateCollection);
 
-      await this.collectionRepository.save(product);
+      await this.collectionRepository.save(preloadCollection);
 
-      return new ResponseDto<string>(JSON.stringify({msg: `Product was deleted`}))
+      return new ResponseDto<string>(`Collection with id ${id} is deleted`, null, 200)
     } catch (error) {
       console.log('Error', error);
-      return new ResponseDto<any>("", 500, "", true, error.msg);
+      return new ResponseDto<any>(`Collection with id ${id} is not deleted`, null, 500, "", true, error.sqlMessage);
     }
   }
 }

@@ -35,4 +35,10 @@ export class CreateProductDto {
     @IsDate()
     @IsOptional()
     deletedAt: Date;
+
+    @IsNumber()
+    category: number;
+
+    @IsNumber()
+    collection: number;
 }

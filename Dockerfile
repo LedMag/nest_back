@@ -16,8 +16,7 @@ FROM node:16-alpine3.16 as prod
 
 RUN mkdir -p /usr/src/app/
 
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
+# ENV NODE_ENV=${NODE_ENV}
 ENV PORT=9000
 ENV MYSQL_HOST=lu_db
 ENV MYSQL_PORT=3306

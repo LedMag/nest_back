@@ -1,6 +1,6 @@
 import { Category } from 'src/app/category/entities/category.entity';
 import { Collection } from 'src/app/collection/entities/collection.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 
 @Entity('products')
 export class Product {
@@ -35,9 +35,11 @@ export class Product {
     @Column('text', {nullable: true})
     description_ru: string;
 
-    @ManyToOne(type => Category, category => category.id)
-    category: Category;
+    @ManyToOne(() => Category, category => category.products, { nullable: false, eager: true })
+    @JoinColumn({ name: 'category' })
+    category: number;
 
-    @ManyToOne(type => Collection, collection => collection.id)
-    collection: Collection;
+    @ManyToOne(() => Collection, collection => collection.products, { nullable: false, eager: true })
+    @JoinColumn({ name: 'collection' })
+    collection: number;
 }

@@ -1,4 +1,4 @@
-import { IsDate, IsOptional, IsString } from "class-validator";
+import { IsArray, IsDate, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateCollectionDto {
     @IsString()
@@ -31,4 +31,8 @@ export class CreateCollectionDto {
     @IsDate()
     @IsOptional()
     deletedAt: Date;
+
+    @IsArray()
+    @IsOptional()
+    productId: number[];
 }

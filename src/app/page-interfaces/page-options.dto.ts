@@ -1,5 +1,6 @@
 import { Type } from "class-transformer";
 import { IsEnum, IsInt, IsOptional, Max, Min } from "class-validator";
+import { PageOptionsInterface } from "./page-options.interface";
 
 export enum Order {
     ASC = "ASC",
@@ -12,7 +13,7 @@ export enum OrderBy {
     name = "name"
 }
 
-export class PageOptionsDto {
+export class PageOptionsDto implements PageOptionsInterface {
   @IsEnum(Order)
   @IsOptional()
   readonly order?: Order = Order.ASC;
@@ -20,12 +21,6 @@ export class PageOptionsDto {
   @IsEnum(OrderBy)
   @IsOptional()
   readonly orderBy?: OrderBy = OrderBy.createdAt;
-
-  @IsOptional()
-  readonly category?: string = "";
-
-  @IsOptional()
-  readonly collection?: string = "";
 
   @Type(() => Number)
   @IsInt()
@@ -38,7 +33,7 @@ export class PageOptionsDto {
   @Min(1)
   @Max(50)
   @IsOptional()
-  readonly take?: number = 3;
+  readonly take?: number = 30;
 
   get skip(): number {
     return (this.page - 1) * this.take;

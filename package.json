@@ -8,6 +8,7 @@
   "scripts": {
     "nest-help": "nest --help",
     "nest-res": "nest g res",
+    "nest-s": "nest g s",
     "prebuild": "rimraf dist",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
