@@ -35,11 +35,11 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # Shell
-migrat-d.sh
-migrat-g.sh
-migrat-r.sh
-start.sh
-wait_db.sh
+./migrat-d.sh
+./migrat-g.sh
+./migrat-r.sh
+./start.sh
+./wait_db.sh
 
 # env
-.env
+./.env
